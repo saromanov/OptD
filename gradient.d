@@ -1,9 +1,17 @@
 module gradient;
+import std.stdio;
+import std.math;
 
 alias float function(double) Func;
 alias float function(double, double) Subgradient;
 alias double[] Arr;
 
+
+
+//Stepsize function
+float ConstStepLength(float k,float k1, float subgrad){
+	return abs((k - (k1 + 1))/(pow(subgrad,2)));
+}
 
 template Grad(T){
 	T[] gradient(T x0, float alpha, uint iters, Func dfunc,float stepsize=1e-3){
@@ -17,12 +25,14 @@ template Grad(T){
 
 	T[] subgradient(T x0, Func alpha, uint iters, real function(real) subgrad){
 		double[] result = new double[](iters+1);
-		T bestvalue;
+		T bestvalue = x0;
 		result[0] = x0;
 		for(int i = 0;i < iters;++i){
-			T current = result[i] - alpha(result[i]) * subgrad(result[i]);
+			auto sub = subgrad(result[i]);
+			T current = result[i] - ConstStepLength(result[i], bestvalue, sub) * sub;
+			writeln(ConstStepLength(result[i], bestvalue, sub));
 			result[i+1] = current;
-			if(current < bestvalue)
+			if(abs(current) < abs(bestvalue))
 				bestvalue = current; 
 		}
 		return result;
