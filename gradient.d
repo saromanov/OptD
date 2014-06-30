@@ -4,6 +4,7 @@ import std.math;
 
 alias float function(double) Func;
 alias float function(double, double) Subgradient;
+alias real function(double, float) HProx;
 alias double[] Arr;
 
 
@@ -37,6 +38,46 @@ template Grad(T){
 		}
 		return result;
 	}
+
+	T[] proximal(T x0, float alpha, uint iters, HProx hprox, Func dfunc){
+		double[] result = new double[](iters+1);
+		result[0] = x0;
+		for(int i = 0;i < iters;++i){
+			x[i + 1] = hprox(x[i] - alpha * dfunc(x[i], alpha));
+		}
+		return result;
+	}
+}
+
+HProx ProxType(string t){
+	if(t == "x1"){
+		auto sign = function(double x){
+			if(x == 0)
+				return 0;
+			if( x > 0)
+				return 1;
+			if(x < 0)
+				return -1;
+		};
+
+		auto maxf = function(double x, double y){
+			if(x >= y)
+				return x;
+			else
+				return y;
+		}
+		return function(double x, float alpha) => sign(x) * maxf(0, abs(x) - alpha);
+	}
+
+	if(t == "x2"){
+
+	}
+
+	if(t == "xinf"){
+
+	}
+
+	return null;
 }
 
 
@@ -53,4 +94,12 @@ double[] SubGradientDescent(double x0, Func alpha, uint iters,
 	float stepsize=1e-3){
 	return Grad!double.subgradient(x0, alpha, iters, subgrad);
 }
+
+//Proximal Gradient Descent
+double[] ProximalGradientDescent(double x0, Func dfunc, uint iters,const string hproxtype, 
+	Func dfunc,
+	float stepsize=1e-3){
+	return Grad!double.proximal(x0,stepsize, iters, ProxType(hproxtype), Func dfunc);
+}
+
 
