@@ -1,18 +1,20 @@
 module gradient;
 import std.stdio;
-import std.math;
+import std.math, std.random, std.range, std.array,std.functional;
 
 alias float function(double) Func;
 alias float function(double, double) Subgradient;
-alias real function(double, float) HProx;
+alias real delegate(double, float) HProx;
 alias double[] Arr;
 
 
+//http://stronglyconvex.com/blog/proximal-gradient-descent.html
 
 //Stepsize function
 float ConstStepLength(float k,float k1, float subgrad){
 	return abs((k - (k1 + 1))/(pow(subgrad,2)));
 }
+
 
 template Grad(T){
 	T[] gradient(T x0, float alpha, uint iters, Func dfunc,float stepsize=1e-3){
@@ -43,7 +45,20 @@ template Grad(T){
 		double[] result = new double[](iters+1);
 		result[0] = x0;
 		for(int i = 0;i < iters;++i){
-			x[i + 1] = hprox(x[i] - alpha * dfunc(x[i], alpha));
+			result[i + 1] = hprox(result[i] - alpha * dfunc(result[i]), alpha);
+		}
+		return result;
+	}
+
+	//Stochastic gradient descent
+	T[] stochatic(T[] init, float alpha, uint iters, int numsamples, Func dfunc){
+		double[] result = new double[](iters+1);
+		for(int i = 0;i < iters;++i){
+			//http://dlang.org/phobos/std_random.html#.randomShuffle
+			auto sample = init.randomCover(rndGen).take(numsamples).array;
+			for(int j = 0;j < numsamples;++j){
+				sample[j] = sample[j] - alpha * dfunc(sample[j]);
+			}
 		}
 		return result;
 	}
@@ -56,17 +71,15 @@ HProx ProxType(string t){
 				return 0;
 			if( x > 0)
 				return 1;
-			if(x < 0)
-				return -1;
+			return -1;
 		};
 
 		auto maxf = function(double x, double y){
 			if(x >= y)
 				return x;
-			else
-				return y;
-		}
-		return function(double x, float alpha) => sign(x) * maxf(0, abs(x) - alpha);
+			return y;
+		};
+		return (double x, float alpha) => sign(x) * maxf(0, abs(x) - alpha);
 	}
 
 	if(t == "x2"){
@@ -96,10 +109,15 @@ double[] SubGradientDescent(double x0, Func alpha, uint iters,
 }
 
 //Proximal Gradient Descent
-double[] ProximalGradientDescent(double x0, Func dfunc, uint iters,const string hproxtype, 
-	Func dfunc,
+double[] ProximalGradientDescent(double x0, Func dfunc, uint iters,const string hproxtype,
 	float stepsize=1e-3){
-	return Grad!double.proximal(x0,stepsize, iters, ProxType(hproxtype), Func dfunc);
+	return Grad!double.proximal(x0,stepsize, iters, ProxType(hproxtype), dfunc);
 }
+
+double[] StochasticGradientDescent(double x0, Func dfunc, uint iters,const string hproxtype,
+	float stepsize=1e-3){
+
+	return null;
+	}
 
 

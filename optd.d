@@ -4,6 +4,8 @@ import std.stdio;
 import std.math;
 import gradient;
 
+import std.stdio, std.random, std.range, std.array;
+
 //TODO
 //Merge gaussnewton and this project
 //add Levenberg–Marquardt_algorithm
@@ -18,11 +20,15 @@ void test_gradient(){
 
 void test_subgradient(){
 	auto stepsize = function float (double x){ return 1e-4;};
-	auto result = SubGradientDescent(0.5, stepsize, 100, &tanh);
+	auto result = SubGradientDescent(0.77, stepsize, 100, &tanh);
 	writeln(result);
+}
+
+void test_proximal_gradient(){
+	//auto result = ProximalGradientDescent(0.55, )
 }
 
 void main()
 {
-	test_subgradient();
+	//test_proximal_gradient();
 }
