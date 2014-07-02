@@ -1,10 +1,12 @@
 module gradient;
 import std.stdio;
-import std.math, std.random, std.range, std.array,std.functional;
+import std.math, std.random, std.range, std.array,std.functional,
+std.parallelism;
 
 alias float function(double) Func;
 alias float function(double, double) Subgradient;
 alias real delegate(double, float) HProx;
+alias real delegate (double x) LRate;
 alias double[] Arr;
 
 
@@ -41,6 +43,8 @@ template Grad(T){
 		return result;
 	}
 
+
+	//Step size - constant or compute with line search
 	T[] proximal(T x0, float alpha, uint iters, HProx hprox, Func dfunc){
 		double[] result = new double[](iters+1);
 		result[0] = x0;
@@ -83,11 +87,24 @@ HProx ProxType(string t){
 	}
 
 	if(t == "x2"){
-
+		return (double x, float alpha) => (1 - alpha/x) * x;
 	}
 
-	if(t == "xinf"){
+	if(t == "1/2x2"){
+		return (double x, float alpha) => x/(1 + alpha);
+	}
 
+	return null;
+}
+
+//Const or line search
+LRate LearningRate(string param){
+	if(param == "const")
+		return (x) => x;
+
+	//TODO
+	if(param == "linesearch"){
+		return (x) => x;
 	}
 
 	return null;
