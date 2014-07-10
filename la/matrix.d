@@ -1,6 +1,7 @@
 module matrix;
+
 import std.stdio, std.algorithm, std.typecons, std.numeric,
-       std.array, std.conv, std.string, std.range;
+       std.array, std.conv, std.string, std.range, std.variant;
 
 alias double[] vector;
 
@@ -55,76 +56,92 @@ T[][] product(T)(T[][] matrix, T[][] values) nothrow{
 	return result;
 }
 
-
-private T[][] initUpper(T)(T[][] matrix) nothrow in {
-		assert(matrix.isSquare());
-	}
-	body {
-	double[][] U = new double[][](matrix.length, matrix[0].length);
-	for(int i = 0;i < matrix.length;++i){
-		U[0][i] = matrix[0][i];
-	}
-	return U;
+T[] product(T)(T[][] matrix, T[] vector) nothrow{
+	int len = matrix.length;
+	T[] result = new T[](matrix.length);
+		foreach(immutable i; 0 .. len){
+			T value = 0;
+			foreach(immutable j; 0 .. matrix[0].length){
+				value += matrix[i][j] * vector[j];
+			}
+			result[i] = value;
+		}
+	return result;
 }
-
-private T[][] initLower(T)(T[][] matrix, T[][] upper) nothrow in {
-	assert(matrix.isSquare());
-	assert(upper.isSquare());
-	}
-	body {
-		int len = matrix.length;
-		double[][] L = new double[][](len, len);
-		for(int i = 1;i < matrix.length;++i)
-			L[i][0] = (1/upper[0][0]) * matrix[i][0];
-		return L;
-	}
 
 int[] initArray(int nums){
-	int[] arr = new int[](nums);
-	for(int i = 0;i < arr.length;++i)
-		arr[i] = i;
-	return arr;
+	return iota(nums).array;
 }
+
+private T[][] zeroMatrix(T)(int n, int r){
+	return n.iota
+		   .map!(i => r.iota.map!(j => cast(T)(0)).array)
+		   .array;	
+}
+
+private T[][] eye(T)(int n){
+	return n.iota
+	.map!(i => n.iota.map!(j => cast(T)(i == j)).array)
+	.array;
+}
+
+T[] sub(T)(T[] data1, T[] data2) nothrow in{
+		assert(data1.length > 0);
+		assert(data1.length == data2.length); 
+	}body {
+		return iota(data1.length)
+			   .map!(x => data1[x] - data2[x])
+			   .array;
+	}
 
 private T[][] pivot(T)(T[][] matrix) in {
 	assert(matrix.isSquare());
 	}body
 	{
 		int len = matrix.length;
-		double[][]p = new double[][](len, len);
-		for(int i = 0;i < len;++i)
-			for(int j = 0;j < len;++j)
-				matrix[i][j] = i == j;
-		for(int i = 0;i < n;++i){
+		T[][]p = eye!T(len);
+		for(int i = 0;i < len;++i){
+			T maxvalue = matrix[i][i];
+			size_t row = i;
+			for(int j = i;j < len;++j){
+				if(matrix[j][i] > maxvalue){
+					maxvalue = matrix[j][i];
+					row = j;
+				}
+			}
 
+			if(i != row){
+				swap(p[i], p[row]);
+			}
 		}
 		return p;
 	}
 
 //austingwalters.com/gauss-seidel-method/
-T[][] lu(T)(T[][] matrix)in {
+Tuple!(T[][],"L", T[][],"U", const T[][],"P") lu(T)(T[][] matrix) nothrow in {
 	assert(matrix.isSquare());
 }body {
-	double[][] U = initUpper!T(matrix);
-	double[][] L = initLower!T(matrix, U);
+	int len = matrix.length;
+	double[][] U = zeroMatrix!T(len, len);
+	double[][] L = zeroMatrix!T(len, len);
 	auto pivot = matrix.pivot();
 	auto datamatrix = product!T(pivot, matrix);
-	for(int i = 0;i < matrix.length-1;++i){
+	for(int i = 0;i < len;++i){
 		L[i][i] = 1;
-		for(int x = i+1; x < i+1;++x)
+		for(int x = 0; x < i+1;++x)
 		{
-			T result = 0;
-			for(int j = 0;j < x;++j)
+			T result = 0.0;
+			for(int j = 0;j < x;++j){
 				result += U[j][i] * L[x][j];
+			}
 			U[x][i] = datamatrix[x][i] - result;
 		}
-		for(int x = i+1;x < i;++x){
+		for(int x = i;x < len;++x){
 			T result = 0;
-			for(int j = i+1;j < i;++j)
+			for(int j = 0;j < i;++j)
 				result += U[j][i] * L[x][j];
-			L[x][i] = (datamatrix[x][i] - result)/U[i][x];
+			L[x][i] = (datamatrix[x][i] - result)/U[i][i];
 		}
 	}
-	writeln(matrix);
-	return null;
+	return typeof(return)(L, U, pivot);
 }
