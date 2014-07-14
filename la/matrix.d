@@ -1,7 +1,7 @@
 module matrix;
 
 import std.stdio, std.algorithm, std.typecons, std.numeric,
-       std.array, std.conv, std.string, std.range, std.variant;
+       std.array, std.conv, std.string, std.range, std.variant, std.math;
 
 alias double[] vector;
 
@@ -27,20 +27,14 @@ bool isEmpty(T)(T[][] arr){
 	return false;
 }
 
-T[][] transpose(T)(T [][] arr) nothrow
+T[][] transpose(T)(T [][] matrix) nothrow
         in
         {
-        	assert(arr.isSquare!T);
+        	assert(matrix.isSquare!T);
         }
         body {
-		T [][] result = new T[][](arr.length, arr[0].length);
-		for(int i = 0;i < arr.length;++i){
-			T tempvec[] = new T[arr[i].length];
-			for(int j = 0;j < arr[i].length;++j){
-				result[i][j] = arr[j][i];
-			}
-		}
-		return result;
+		int n = matrix.length;
+		return n.iota.map!(x => matrix[x].length.iota.map!(j => matrix[j][x]).array).array;
 }
 
 T[][] product(T)(T[][] matrix, T[][] values) nothrow{
@@ -69,6 +63,10 @@ T[] product(T)(T[][] matrix, T[] vector) nothrow{
 	return result;
 }
 
+T[][] product(T)(ref T[][] matrix, T number){
+		return map!(x => map!(y => y * number)(x).array)(matrix).array;
+}
+
 int[] initArray(int nums){
 	return iota(nums).array;
 }
@@ -92,6 +90,19 @@ T[] sub(T)(T[] data1, T[] data2) nothrow in{
 		return iota(data1.length)
 			   .map!(x => data1[x] - data2[x])
 			   .array;
+}
+
+T[][] subm(T)(T[][] data, T[][] data2) nothrow in{
+		assert(data.length > 0);
+		assert(data[0].length == data.length);
+		assert(data.length == data2.length);
+	}body {
+		int n = data.length;
+		foreach(immutable i; 0 .. n)
+			foreach(immutable j; 0 .. n){
+				data[i][j] -= data2[i][j];
+			}
+		return data;
 	}
 
 private T[][] pivot(T)(T[][] matrix) in {
@@ -144,4 +155,113 @@ Tuple!(T[][],"L", T[][],"U", const T[][],"P") lu(T)(T[][] matrix) nothrow in {
 		}
 	}
 	return typeof(return)(L, U, pivot);
+}
+
+Tuple!(T[][],"L", T[][],"R")
+trilLR(T)(T[][] matrix){
+	int n = matrix.length;
+	auto zeros = (0.0).repeat.take(n);
+	T[][] left = zeros.map!(x => zeros.array).array;
+	for(int i = 0;i < n;++i){
+		for(int j = 0;j < i+1;++j){
+			left[i][j] = matrix[i][j];
+		}
+	}
+
+	return typeof(return)(left, matrix.subm(left));
+}
+
+T[][] minor(T)(T[][] matrix){
+		T[][] result = new T[][](matrix.length, matrix.length);
+		for(int p = 0;p < matrix.length;++p){
+			for(int i = 0;i < matrix.length;++i){
+				T [][]arr = new T[][](matrix.length-1, matrix.length-1);
+				T [] temp;
+				int a = 0;
+				for(int j = 0;j < matrix.length;++j){
+					for(int k = 0;k < matrix.length;++k){
+						if(k == i)k+=1;
+						if(j == p)j+=1;
+						if(k == matrix.length)break;
+						if(j == matrix.length)break;
+						temp ~= matrix[j][k];
+						if(temp.length == matrix.length-1){
+							arr[a] = temp;
+							temp = [];
+							a+=1;
+						}
+					}
+				}
+				result[p][i] = computeMinor(arr);
+			}
+
+		}
+		return transpose(result);
+}
+
+
+//http://en.wikipedia.org/wiki/Determinant
+    //http://www.easycalculation.com/matrix/learn-matrix-determinant.php
+double determinant(T)(T [][] matrix){
+		double resultvalue = 0;
+		for(int i = 0;i < matrix.length;++i){
+			T value = matrix[0][i];
+			T [][]arr = new T[][](matrix.length-1, matrix.length-1);
+			T [] temp;
+			int a = 0;
+			for(int j = 1;j < matrix.length;++j){
+				for(int k = 0;k < matrix.length;++k){
+					if(k == i)k+=1;
+					if(k == matrix.length)break;
+					temp ~= matrix[j][k];
+					if(temp.length == matrix.length-1){
+						arr[a] = temp;
+						temp = [];
+						a+=1;
+					}
+				}
+			}
+		if(i == 1) resultvalue -= computeDet(arr, value);
+		else
+		resultvalue+=computeDet(arr, value);
+		}
+		return resultvalue;
+	}
+
+	//Find adjoint of a matrix where AB = I
+T[][] adjoint(T)(T[][] matrix){
+		T[][]min = minor(matrix);
+		for(int i = 1;i <= min.length;++i){
+			for(int j = 1;j <= min.length;++j){
+				min[i-1][j-1] = pow(-1, i+j) * min[i-1][j-1];
+			}
+		}
+		return min;
+}
+
+// Get 2x2 matrix
+double computeDet(T)(T[][]matrix, T value)
+	in{
+		assert(matrix.length == 2 && matrix[0].length);
+	  }
+	body
+	{
+		return value * (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]);
+	}
+
+double computeMinor(T)(T[][] matrix)
+	in{
+		assert(matrix.length == 2 && matrix[0].length);
+	  }
+	body
+	{
+		return (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]);
+	}
+
+//Matrix inverse;
+//A^-1 = 1/|A|
+//Now, only for 3x3 case
+T [][] inv(T)(T [][] matrix){
+	T[][] adj = adjoint(matrix);
+	return adj.product(1/determinant(matrix));
 }
