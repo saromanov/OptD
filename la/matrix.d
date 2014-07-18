@@ -63,6 +63,34 @@ T[] product(T)(T[][] matrix, T[] vector) nothrow{
 	return result;
 }
 
+T[] productVec(T)(T[] vector, T value) nothrow in {
+	assert(vector.length > 0);
+}body {
+	return vector.map!(x => x * value).array;
+}
+
+T[] operVec(T)(T[] vec1, T[] vec2, T function(T one, T two) func) nothrow{
+	return iota(vec1.length)
+		.map!((x,y) => func(x,y))
+		.array;
+}
+
+T[] plusVec(T)(T[] vec1, T[] vec2) nothrow in{
+	assert(vec1.length == vec2.length);
+}body {
+	return iota(vec1.length)
+		.map!(x => vec1[x] + vec2[x])
+		.array;
+}
+
+T[] minusVec(T)(T[] vec1, T[] vec2) nothrow in{
+	assert(vec1.length == vec2.length);
+}body {
+	return iota(vec1.length)
+		.map!(x => vec1[x] + vec2[x])
+		.array;
+}
+
 T[][] product(T)(ref T[][] matrix, T number){
 		return map!(x => map!(y => y * number)(x).array)(matrix).array;
 }
@@ -77,11 +105,14 @@ private T[][] zeroMatrix(T)(int n, int r){
 		   .array;	
 }
 
-private T[][] eye(T)(int n){
+T[][] eye(T)(int n) nothrow in{
+	assert(n > 0);
+}body{
 	return n.iota
 	.map!(i => n.iota.map!(j => cast(T)(i == j)).array)
 	.array;
 }
+
 
 T[] sub(T)(T[] data1, T[] data2) nothrow in{
 		assert(data1.length > 0);
@@ -265,3 +296,4 @@ T [][] inv(T)(T [][] matrix){
 	T[][] adj = adjoint(matrix);
 	return adj.product(1/determinant(matrix));
 }
+
