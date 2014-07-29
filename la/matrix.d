@@ -1,7 +1,7 @@
 module matrix;
 
 import std.stdio, std.algorithm, std.typecons, std.numeric,
-       std.array, std.conv, std.string, std.range, std.variant, std.math;
+       std.array, std.conv, std.string, std.range, std.variant, std.math, std.traits;
 
 alias double[] vector;
 
@@ -69,6 +69,7 @@ T[] productVec(T)(T[] vector, T value) nothrow in {
 	return vector.map!(x => x * value).array;
 }
 
+
 T[] operVec(T)(T[] vec1, T[] vec2, T function(T one, T two) func) nothrow{
 	return iota(vec1.length)
 		.map!((x,y) => func(x,y))
@@ -89,6 +90,16 @@ T[] minusVec(T)(T[] vec1, T[] vec2) nothrow in{
 	return iota(vec1.length)
 		.map!(x => vec1[x] + vec2[x])
 		.array;
+}
+
+T[] minus(T)(T[] vec, T value) nothrow if(isNumeric!T) in{
+	assert(vec.length > 0);
+}body {
+	if(value == 0)
+		return vec;
+	return iota(vec.length)
+		   .map!(x => vec[x] - value)
+		   .array;
 }
 
 T[][] product(T)(ref T[][] matrix, T number){

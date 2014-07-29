@@ -1,15 +1,15 @@
 import std.stdio;
 import std.typecons;
 import std.range;
-import la.matrix;
+import matrix;
 
 //Implementation of Berndt–Hall–Hall–Hausman algorithm
 //http://en.wikipedia.org/wiki/BHHH_algorithm
 
 
 
-T [][] BHHH(T)(T function(T) dfunc, T[string] variables, int iters_limit){
-	int iter = 1;
+T [] BHHH(T)(T function(T) dfunc, T[string] variables, int iters_limit){
+	int iter = 0;
 	//Init values for sep size
 	T[] lambdas = StepSize(iters_limit, 0.75);
 	int varlength = variables.keys.length;
@@ -17,15 +17,20 @@ T [][] BHHH(T)(T function(T) dfunc, T[string] variables, int iters_limit){
 	result[0] = variables.values.array;
 	while(iter < iters_limit){
 		//Compute new values
-		auto newvalues = new T[](varlength);
+		auto grad = new T[][](varlength, varlength);
 		int c = 0;
+
+		//Need to AD
 		foreach(ref i; variables.keys){
 			//TODO: Need some change for compute gradient
-			newvalues[c] = dfunc(variables[i]);
+			auto data = new T[](varlength); 
+			foreach(ref j; 0 .. varlength){
+				data[j] = dfunc(variables[i]);
+			}
+			grad[c] = data;
 			c += 1;
 		}
-		auto result1 = grad.prod(grad).inv();
-		result1[iter + 1] = result1[iter].prod(lambdas[iter]);
+		result[iter+1] = result[iter].minus(lambdas[iter].product(grad));
 		iter += 1;
 
 	}
