@@ -28,7 +28,6 @@ public:
 
 }
 
-
 private struct Parameters
 {
 	double aparam, cparam, lambda1, lambda2;
@@ -57,10 +56,17 @@ public:
 
 				auto a1 = params.lambda1/(pow((params.lambda2 + i), alpha1));
 				auto c1 = params.cparam/(pow(i, alpha2));
-				auto delta = p.iota.map!(x => 2 * round(uniform(0.0,1.0))-1);
+				auto delta = 2 * uniform(0.0,1.0)-1;
+				auto maxvalue = loss(theta + c1 * delta);
+				auto minvalue = loss(theta - c1 * delta);
+				auto diff = (maxvalue - minvalue)/(2 * c1 * delta);
+				theta = theta - a1 * diff;
+
 			}
 
-			auto lossdata = loss(theta);
+			auto lossdata = lossfinal(theta);
+			auto lossdata = pow(lossdata, 2);
+
 		}
 	}
 
@@ -69,6 +75,11 @@ public:
 private:
 	//Loss function
 	double loss(double x){
+		return x;
+	}
+
+	//Loss final function
+	double lossfinal(double x){
 		return x;
 	}
 
