@@ -1,4 +1,6 @@
-import std.range, std.math, std.random, std.stdio, std.array;
+import std.range, std.math, std.random, std.stdio, std.array, std.functional;
+import matrix;
+
 
 class AutoParamChainging
 {
@@ -41,24 +43,28 @@ public:
 	}
 
 	//http://www.jhuapl.edu/ISSO/PDF-txt/Txt-Cp7/spsa_basic_constrained.txt
-	void run(double[] startvalue, double alpha1, double alpha2, double theta, double p, int iters){
+	void run(double[] startvalue, double alpha1, double alpha2, double theta, int p, int iters){
 		auto alphachan = new AutoParamChainging(alpha1, 1e-6);
 		auto result = uninitializedArray!(double[][])(startvalue.length, iters);
+		auto lowertheta = (-1000).repeat().take(p);
+		auto uppertheta = 1000.repeat().take(p);
+		auto theta = 1.repeat().take(p);
 		int n = 100;
 		result[0] = startvalue;
 
 		//Iters or some cases
 		foreach(immutable i; 0 .. iters){
+			theta = lowertheta;
 			foreach(immutable k; 0 .. n){
 
 				auto a1 = calcS(params.lambda1, params.lambda2+i+1, alpha1);
 				auto c1 = calcS(params.cparam,i,alpha2);
 				auto delta = 2 * round(uniform(0.0,1.0))-1;
-				auto maxvalue = loss(theta + c1 * delta);
-				auto minvalue = loss(theta - c1 * delta);
-				auto diff = (maxvalue - minvalue)/(2 * c1 * delta);
-				theta = theta - a1 * diff;
-				theta = min(theta, theta);
+				auto maxvalue = loss(theta.plus(c1 * delta));
+				auto minvalue = loss(theta.plus(-(c1 * delta)));
+				/*auto diff = (maxvalue - minvalue)/(2 * c1 * delta);
+				theta = theta - a1 * diff;*/
+				//theta = min(theta, theta);
 
 			}
 
