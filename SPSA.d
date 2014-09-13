@@ -1,9 +1,5 @@
 import std.range, std.math, std.random, std.stdio, std.array;
 
-
-////Автоматичесое изменение альфа, тэта
-//Автоматическое изменение параметров (умеличесние или уменьшение на шаг)
-//Добавить пользовательскую функцю для вычисления изменения шага
 class AutoParamChainging
 {
 private:
@@ -44,6 +40,7 @@ public:
 		params = Parameters(ap, cp, l1, l2);
 	}
 
+	//http://www.jhuapl.edu/ISSO/PDF-txt/Txt-Cp7/spsa_basic_constrained.txt
 	void run(double[] startvalue, double alpha1, double alpha2, double theta, double p, int iters){
 		auto alphachan = new AutoParamChainging(alpha1, 1e-6);
 		auto result = uninitializedArray!(double[][])(startvalue.length, iters);
@@ -54,21 +51,23 @@ public:
 		foreach(immutable i; 0 .. iters){
 			foreach(immutable k; 0 .. n){
 
-				auto a1 = params.lambda1/(pow((params.lambda2 + i), alpha1));
-				auto c1 = params.cparam/(pow(i, alpha2));
-				auto delta = 2 * uniform(0.0,1.0)-1;
+				auto a1 = calcS(params.lambda1, params.lambda2+i+1, alpha1);
+				auto c1 = calcS(params.cparam,i,alpha2);
+				auto delta = 2 * round(uniform(0.0,1.0))-1;
 				auto maxvalue = loss(theta + c1 * delta);
 				auto minvalue = loss(theta - c1 * delta);
 				auto diff = (maxvalue - minvalue)/(2 * c1 * delta);
 				theta = theta - a1 * diff;
+				theta = min(theta, theta);
 
 			}
 
 			auto lossdata = lossfinal(theta);
-			auto lossdata = pow(lossdata, 2);
+			auto loss_squre = pow(lossdata, 2);
 
 		}
 	}
+
 
 
 //Area for private functions
@@ -81,6 +80,10 @@ private:
 	//Loss final function
 	double lossfinal(double x){
 		return x;
+	}
+
+	auto calcS(double numerator, double value, double power){
+		return numerator/pow(value, power);
 	}
 
 	void checkParameters(double alpha1, double alpha2, double theta, double p, int iters){
