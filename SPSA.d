@@ -1,7 +1,10 @@
-import std.range, std.math, std.random, std.stdio, std.array, std.functional;
+import std.range, std.math, std.random, std.stdio, std.array, std.functional,
+std.conv;
 import matrix;
+import linear;
 
 
+alias Real = real;
 class AutoParamChainging
 {
 private:
@@ -26,6 +29,9 @@ public:
 
 }
 
+
+//Simple "store" for parameters.
+//Betther than store it in SPSA class
 private struct Parameters
 {
 	double aparam, cparam, lambda1, lambda2;
@@ -43,12 +49,12 @@ public:
 	}
 
 	//http://www.jhuapl.edu/ISSO/PDF-txt/Txt-Cp7/spsa_basic_constrained.txt
-	void run(double[] startvalue, double alpha1, double alpha2, double theta, int p, int iters){
+	void run(double[] startvalue, double alpha1, double alpha2, double theta2, int p, int iters){
 		auto alphachan = new AutoParamChainging(alpha1, 1e-6);
 		auto result = uninitializedArray!(double[][])(startvalue.length, iters);
-		auto lowertheta = (-1000).repeat().take(p);
-		auto uppertheta = 1000.repeat().take(p);
-		auto theta = 1.repeat().take(p);
+		auto lowertheta = (-1000.0).rep(p);
+		auto uppertheta = 1000.0.rep(p);
+		auto theta = p.ones;
 		int n = 100;
 		result[0] = startvalue;
 
@@ -59,17 +65,19 @@ public:
 
 				auto a1 = calcS(params.lambda1, params.lambda2+i+1, alpha1);
 				auto c1 = calcS(params.cparam,i,alpha2);
-				auto delta = 2 * round(uniform(0.0,1.0))-1;
-				auto maxvalue = loss(theta.plus(c1 * delta));
-				auto minvalue = loss(theta.plus(-(c1 * delta)));
+				auto delta = p.iota.map!(x => to!(double)(2 * round(uniform(0.0,1.0))-1)).array;
+				auto prod = delta.productVec(c1);
+				auto maxvalue = loss(theta.plusVec(prod));
+				auto minvalue = loss(theta.plusVec(delta.productVec(-c1)));
+
 				/*auto diff = (maxvalue - minvalue)/(2 * c1 * delta);
 				theta = theta - a1 * diff;*/
 				//theta = min(theta, theta);
 
 			}
 
-			auto lossdata = lossfinal(theta);
-			auto loss_squre = pow(lossdata, 2);
+			/*auto lossdata = lossfinal(theta);
+			auto loss_squre = pow(lossdata, 2);*/
 
 		}
 	}
@@ -79,7 +87,7 @@ public:
 //Area for private functions
 private:
 	//Loss function
-	double loss(double x){
+	double[] loss(double[] x){
 		return x;
 	}
 
@@ -88,7 +96,7 @@ private:
 		return x;
 	}
 
-	auto calcS(double numerator, double value, double power){
+	double calcS(double numerator, double value, double power){
 		return numerator/pow(value, power);
 	}
 

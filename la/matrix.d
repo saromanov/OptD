@@ -76,6 +76,12 @@ T[] operVec(T)(T[] vec1, T[] vec2, T function(T one, T two) func) nothrow{
 		.array;
 }
 
+T[] plus(T)(T[] vec, T value) nothrow if(isNumeric!T) in {
+	assert(vec.length > 0);
+}body {
+	return vec.map!(x => x + value).array;
+}
+
 T[] plusVec(T)(T[] vec1, T[] vec2) nothrow in{
 	assert(vec1.length == vec2.length);
 }body {
