@@ -5,6 +5,7 @@ import linear;
 
 
 alias Real = real;
+alias LOSS = double[] delegate (double[]);
 class AutoParamChainging
 {
 private:
@@ -43,9 +44,16 @@ private struct Parameters
 class SPSA (T){
 	//Area for private parameters
 	Parameters params;
+	LOSS loss;
 public:
 	this(double ap, double cp, double l1, double l2){
 		params = Parameters(ap, cp, l1, l2);
+		loss = &defaultloss; 
+	}
+
+	//User defined loss function
+	void setLoss(LOSS func){
+		loss = &defaultloss;
 	}
 
 	//http://www.jhuapl.edu/ISSO/PDF-txt/Txt-Cp7/spsa_basic_constrained.txt
@@ -87,7 +95,7 @@ public:
 //Area for private functions
 private:
 	//Loss function
-	double[] loss(double[] x){
+	double[] defaultloss(double[] x){
 		return x;
 	}
 
