@@ -37,6 +37,13 @@ T[][] transpose(T)(T [][] matrix) nothrow
 		return n.iota.map!(x => matrix[x].length.iota.map!(j => matrix[j][x]).array).array;
 }
 
+
+unittest {
+	auto matr = [[0.5,0.4,0.3], [0.4,0.2,0.1], [0.3,0.2,0.1]];
+	assert(matr.transpose() == [[0.5,0.4,0.3], [0.4,0.2,0.2], [0.3,0.1,0.1]]);
+}
+
+
 T[][] product(T)(T[][] matrix, T[][] values) nothrow{
 	T [][] result = new T[][](matrix.length, matrix[0].length);
 	for(int i = 0;i < matrix.length;++i){
@@ -63,12 +70,29 @@ T[] product(T)(T[][] matrix, T[] vector) nothrow{
 	return result;
 }
 
+private T[] VectorValue(T)(T[] vec, T value, T function(T x1, T x2) func) 
+if(isNumeric!T) in {
+	//Basic function with Vector-Value manipulations
+	assert(vec.length > 0);
+}body{
+	return vec.map!(x => func(x, value)).array;
+}
+
 T[] productVec(T)(T[] vector, T value) nothrow in {
 	assert(vector.length > 0);
 }body {
 	return vector.map!(x => x * value).array;
 }
 
+T[] divVec(T)(T[] vector, T[]vector2) nothrow in {
+	assert(vector.length > 0 && vector2.length > 0);
+	assert(vector.length == vector2.length);
+	assert(vector2.filter!(x => x == 0).array.length == 0);
+}body {
+	return vector.length
+				.iota
+				.map!(x => vector[x]/vector2[x]).array;
+}
 
 T[] operVec(T)(T[] vec1, T[] vec2, T function(T one, T two) func) nothrow{
 	return iota(vec1.length)
@@ -79,7 +103,7 @@ T[] operVec(T)(T[] vec1, T[] vec2, T function(T one, T two) func) nothrow{
 T[] plus(T)(T[] vec, T value) nothrow if(isNumeric!T) in {
 	assert(vec.length > 0);
 }body {
-	return vec.map!(x => x + value).array;
+	return VectorValue(vec, value, (T x, T x2) => x + x2);
 }
 
 T[] plusVec(T)(T[] vec1, T[] vec2) nothrow in{
@@ -98,14 +122,17 @@ T[] minusVec(T)(T[] vec1, T[] vec2) nothrow in{
 		.array;
 }
 
-T[] minus(T)(T[] vec, T value) nothrow if(isNumeric!T) in{
+T[] minus(T)(T[] vec, T value) if(isNumeric!T) in{
 	assert(vec.length > 0);
 }body {
 	if(value == 0)
 		return vec;
-	return iota(vec.length)
-		   .map!(x => vec[x] - value)
-		   .array;
+	return VectorValue(vec, value, (T x, T x2) => x - x2);
+}
+
+unittest {
+	auto vec1 = [5,6,7];
+	assert(vec1.minus(5) == [0,1,2]);
 }
 
 T[][] product(T)(ref T[][] matrix, T number){
