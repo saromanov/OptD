@@ -1,8 +1,8 @@
 import std.range, std.math, std.random, std.stdio, std.array, std.functional,
-std.conv;
+std.conv,std.algorithm;
+import std.parallelism : parallel;
 import matrix;
 import linear;
-
 
 alias Real = real;
 alias LOSS = double[] delegate (double[]);
@@ -65,6 +65,7 @@ public:
 		auto theta = p.ones;
 		int n = 100;
 		result[0] = startvalue;
+		auto lossvalue = 1;
 
 		//Iters or some cases
 		foreach(immutable i; 0 .. iters){
@@ -78,30 +79,35 @@ public:
 				auto maxvalue = loss(theta.plusVec(prod));
 				auto minvalue = loss(theta.plusVec(delta.productVec(-c1)));
 
-				/*auto diff = (maxvalue - minvalue)/(2 * c1 * delta);
-				theta = theta - a1 * diff;*/
-				//theta = min(theta, theta);
+				auto diff = maxvalue
+							.minusVec(minvalue)
+							.divVec(delta.productVec(2 * c1));
+				theta = theta.minusVec(diff.productVec(a1));
+				theta = min(theta, uppertheta);
+				theta = max(theta, lowertheta);
 
 			}
 
-			/*auto lossdata = lossfinal(theta);
-			auto loss_squre = pow(lossdata, 2);*/
+			auto lossdata = lossfinal(theta);
+			lossvalue += lossdata;
 
 		}
+
+		writeln("AVG loss value: %d".format(lossvalue/iters));
 	}
 
 
 
 //Area for private functions
 private:
-	//Loss function
+	//Loss function(Need to change)
 	double[] defaultloss(double[] x){
 		return x;
 	}
 
 	//Loss final function
-	double lossfinal(double x){
-		return x;
+	double lossfinal(double[] x){
+		return sum(x);
 	}
 
 	double calcS(double numerator, double value, double power){
