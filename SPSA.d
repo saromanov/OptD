@@ -4,6 +4,7 @@ import std.parallelism : parallel;
 import matrix;
 import linear;
 
+
 alias Real = real;
 alias LOSS = double[] delegate (double[]);
 class AutoParamChainging
@@ -45,6 +46,8 @@ class SPSA (T){
 	//Area for private parameters
 	Parameters params;
 	LOSS loss;
+
+
 public:
 	this(double ap, double cp, double l1, double l2){
 		params = Parameters(ap, cp, l1, l2);
@@ -57,7 +60,7 @@ public:
 	}
 
 	//http://www.jhuapl.edu/ISSO/PDF-txt/Txt-Cp7/spsa_basic_constrained.txt
-	void run(double[] startvalue, double alpha1, double alpha2, double theta2, int p, int iters){
+	private void runInner(double[] startvalue, double alpha1, double alpha2, double theta2, int p, int iters){
 		auto alphachan = new AutoParamChainging(alpha1, 1e-6);
 		auto result = uninitializedArray!(double[][])(startvalue.length, iters);
 		auto lowertheta = (-1000.0).rep(p);
@@ -70,7 +73,7 @@ public:
 		//Iters or some cases
 		foreach(immutable i; 0 .. iters){
 			theta = lowertheta;
-			foreach(immutable k; 0 .. n){
+			foreach(immutable k; 0 .. n-1){
 
 				auto a1 = calcS(params.lambda1, params.lambda2+i+1, alpha1);
 				auto c1 = calcS(params.cparam,i,alpha2);
@@ -95,6 +98,13 @@ public:
 
 		writeln("AVG loss value: %d".format(lossvalue/iters));
 	}
+
+	void run(double[] startvalue, double alpha1, double alpha2, double theta2, int p, int iters) in{
+		 assert(iters > 0, "Iter most be > 0");
+		 assert(startvalue.length > 0, "number of startvalue is zero");
+		} body {
+			runInner(startvalue, alpha1, alpha2, theta2, p, iters);
+		}
 
 
 
