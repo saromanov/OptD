@@ -57,6 +57,27 @@ T[][] product(T)(T[][] matrix, T[][] values) nothrow{
 	return result;
 }
 
+T[] productC(T)(T[] vec, T[] vec2) nothrow in {
+	assert(vec.length > 0);
+	assert(vec2.length > 0);
+	assert(vec.length ==  vec2.length);
+	}body {
+		int len = vec.length;
+		return len.iota.map!(x => vec[x] * vec2[x]).array;
+	}
+
+T product(T)(T [] vec, T[] vec2) nothrow in {
+	assert(vec.length > 0);
+	assert(vec2.length > 0);
+	assert(vec.length ==  vec2.length);	
+} body {
+	T result = 0;
+	foreach(immutable step; 0 .. vec.length){
+		result += vec[step] * vec2[step];
+	}
+	return result;
+}
+
 T[] product(T)(T[][] matrix, T[] vector) nothrow{
 	int len = matrix.length;
 	T[] result = new T[](matrix.length);
